@@ -5,7 +5,7 @@
 
 const app = {
   // Backend URL configuration
-  API_URL: 'http://127.0.0.1:5000/api',
+const API_URL = "https://projectnest-xd7u.onrender.com/api";
 
   // Global State Database Cache
   db: {
