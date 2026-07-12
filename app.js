@@ -4,9 +4,11 @@
  */
 
 const app = {
-  // Backend URL configuration
-const API_URL = "https://projectnest-xd7u.onrender.com/api";
+    // Backend URL configuration
+    apiUrl: "https://projectnest-xd7u.onrender.com/api",
 
+    // Global State Database Cache
+  
   // Global State Database Cache
   db: {
     users: [],
