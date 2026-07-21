@@ -357,28 +357,9 @@ def send_otp():
 def register():
     data = request.json
     email = data.get('email')
-    user_otp = data.get('otp')
 
     if not email:
         return jsonify({"error": "Email is required"}), 400
-    if not user_otp:
-        return jsonify({"error": "OTP is required"}), 400
-
-    # Verify OTP
-    stored = otp_store.get(email)
-    if not stored:
-        return jsonify({"error": "No OTP sent to this email address"}), 400
-
-    # Check expiration
-    if datetime.now().timestamp() > stored['expires_at']:
-        otp_store.pop(email, None)
-        return jsonify({"error": "OTP has expired. Please request a new one."}), 400
-
-    if stored['otp'] != str(user_otp):
-        return jsonify({"error": "Invalid OTP code"}), 400
-
-    # Valid OTP - remove from store
-    otp_store.pop(email, None)
 
     conn = get_db_connection()
     

@@ -315,47 +315,13 @@ app.auth = {
       return;
     }
 
-    // Request OTP from backend
-    let otpRequestData = null;
     try {
-      app.toast.show('Sending OTP to ' + email + '...', 'info');
-      const otpRequest = await fetch(app.API_URL + '/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      otpRequestData = await otpRequest.json();
-      if (!otpRequest.ok) {
-        app.toast.show(otpRequestData.error || 'Failed to send OTP. Please try again.', 'error');
-        return;
-      }
-      app.toast.show('OTP sent successfully!', 'success');
-    } catch (err) {
-      console.error(err);
-      app.toast.show('Failed connecting to OTP server', 'error');
-      return;
-    }
-
-    let promptMsg = 'OTP Verification: An OTP has been sent to ' + email + '. Enter the code to verify:';
-    let defaultVal = '';
-    if (otpRequestData && otpRequestData.dev_mode && otpRequestData.otp) {
-      promptMsg += `\n\n[DEVELOPMENT MODE - SMTP NOT CONFIGURED]\nYour mock OTP code is: ${otpRequestData.otp}`;
-      defaultVal = otpRequestData.otp;
-      app.toast.show(`Dev Mode: Mock OTP is ${otpRequestData.otp}`, 'info');
-    }
-
-    const otp = prompt(promptMsg, defaultVal);
-    if (!otp) {
-      app.toast.show('Registration cancelled. OTP is required.', 'error');
-      return;
-    }
-
-    try {
+      app.toast.show('Creating account...', 'info');
       const response = await fetch(app.API_URL + '/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email, name, mobile, college, uni, branch, semester: sem, password: pass, otp
+          email, name, mobile, college, uni, branch, semester: sem, password: pass
         })
       });
       const resData = await response.json();
