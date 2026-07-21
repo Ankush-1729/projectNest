@@ -350,7 +350,7 @@ def send_otp():
         # If sending fails but no SMTP configuration was provided, still succeed (development mode fallback)
         if not os.environ.get('SMTP_SERVER'):
             otp_store[email] = {"otp": otp, "expires_at": expires_at}
-            return jsonify({"success": "OTP generated (development mode)", "dev_mode": True})
+            return jsonify({"success": "OTP generated (development mode)", "dev_mode": True, "otp": otp})
         return jsonify({"error": "Failed to send OTP email"}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
