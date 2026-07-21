@@ -4,8 +4,7 @@
  */
 
 const app = {
-    // Backend URL configuration
-    API_URL: "http://127.0.0.1:5000/api",
+    API_URL: window.location.origin === 'null' || window.location.protocol === 'file:' ? "http://127.0.0.1:5000/api" : "/api",
 
     // Global State Database Cache
   
@@ -90,14 +89,15 @@ app.db.loadUserWorkspace = async function() {
 
 // Quick Helper to resolve mentor profile photo path
 app.db.getMentorPic = function(path) {
+  const base = window.location.origin === 'null' || window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : window.location.origin;
   if (!path) return 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80';
   if (path.startsWith('http') || path.startsWith('/')) {
     if (path.startsWith('/uploads')) {
-      return 'http://127.0.0.1:5000' + path;
+      return base + path;
     }
     return path;
   }
-  return 'http://127.0.0.1:5000/uploads/' + path;
+  return base + '/uploads/' + path;
 };
 
 
