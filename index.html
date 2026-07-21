@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="style.css">
   <!-- FontAwesome CDN for modern icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://tailwindcss.com"></script>
 </head>
 <body>
 
@@ -66,6 +68,24 @@
     </div>
   </header>
 
+  <!-- Animated Live Activity Ticker (Premium suggestion) -->
+  <div class="activity-ticker-container">
+    <div class="activity-ticker-wrap" id="live-activity-ticker">
+      <div class="ticker-item active" data-id="1">
+        <span class="badge badge-ece"><i class="fa-solid fa-circle-play text-accent animate-pulse"></i> UPDATE</span>
+        <span class="ml-2 font-medium">Amit (CSE, Sem 6) just downloaded 'IoT Smart Irrigation System' Arduino Codes.</span>
+      </div>
+      <div class="ticker-item" data-id="2">
+        <span class="badge badge-ee">BOOKING</span>
+        <span class="ml-2 font-medium">Shreya from DTU booked a 1:1 hardware debugging session with Dr. Jenkins.</span>
+      </div>
+      <div class="ticker-item" data-id="3">
+        <span class="badge badge-mech">INVENTORY</span>
+        <span class="ml-2 font-medium">Raspberry Pi 4 Model B clones restocked in Electronics Store.</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Main View Container -->
   <main class="container">
 
@@ -73,7 +93,11 @@
     <section id="view-landing" class="view-pane">
       <div class="hero-section">
         <div class="hero-content">
-          <h1>Accelerate Your <span>Engineering</span> Career</h1>
+          <!-- Premium Floating Glass Tech Badge -->
+          <div class="hero-badge">
+            <i class="fa-solid fa-bolt animate-pulse"></i> NEXT-GEN ENGINEERING PLATFORM
+          </div>
+          <h1>Accelerate Your <br> <span class="text-glow-gradient">Engineering Career</span></h1>
           <p>Get ready-made academic projects, book personalized 1-on-1 mentorship sessions with expert industry engineers, and source electronic components directly to your door.</p>
           <div class="hero-buttons">
             <button class="btn-primary" onclick="app.router.navigate('projects')">Explore Projects <i class="fa-solid fa-arrow-right"></i></button>
@@ -94,17 +118,121 @@
             </div>
           </div>
         </div>
-        <div class="hero-graphic">
-          <div class="hero-circle-bg"></div>
-          <div class="hero-card glass-panel">
+
+        <!-- RIGHT HERO MULTI-MEDIA SHOWCASE SLIDER -->
+        <div class="hero-slider-container glass-panel">
+          
+          <!-- Dynamic Instagram-style Dash Progress Indicators -->
+          <div class="slider-progress-bar" id="slider-dash-indicator">
+            <div class="progress-dash"><div class="progress-dash-fill"></div></div>
+            <div class="progress-dash"><div class="progress-dash-fill"></div></div>
+            <div class="progress-dash"><div class="progress-dash-fill"></div></div>
+            <div class="progress-dash"><div class="progress-dash-fill"></div></div>
+            <div class="progress-dash"><div class="progress-dash-fill"></div></div>
+          </div>
+
+          <!-- Slide 1: Video 1 -->
+          <div class="hero-slide active" data-slide-type="video" data-duration="18000">
+            <video class="slide-media-element" src="https://res.cloudinary.com/ddbquc9nq/video/upload/v1784368207/0718_1_qhuldj.mp4" muted playsinline autoplay preload="auto"></video>
+            <div class="slide-media-placeholder" style="display: none;">
+              <i class="fa-solid fa-code text-brand-500 text-3xl mb-2"></i>
+              <span class="text-xs text-white/50">VIDEO 1</span>
+              <span class="text-sm font-bold text-accent px-4 text-center">Microcontroller Circuit Wiring & PCB Routing Setup</span>
+            </div>
             <div class="hero-card-header">
-              <span class="badge badge-ece">Embedded Systems</span>
+              <span class="badge badge-ece">Circuit Assembly</span>
+              <span class="rating-stars"><i class="fa-solid fa-circle-play text-accent animate-pulse"></i> LIVE</span>
+            </div>
+            <div>
+              <h2 style="margin-bottom:8px; font-size:1.35rem; line-height:1.2;">IoT Smart Agriculture Monitoring & Irrigation System</h2>
+              <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:15px;">Real circuit wiring, soil sensors, cloud telemetry integration steps shown live.</p>
+              <div class="hero-card-code">
+                <code>ESP32_Irrigation_Controller.ino v2.1.0</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 2: Video 2 -->
+          <div class="hero-slide" data-slide-type="video" data-duration="10000">
+            <video class="slide-media-element" src="https://res.cloudinary.com/ddbquc9nq/video/upload/v1784551388/0720_3_1_q1fkrj.mp4" muted playsinline preload="auto"></video>
+            <div class="slide-media-placeholder" style="display: none;">
+              <i class="fa-solid fa-laptop-code text-accent text-4xl mb-3"></i>
+              <span class="text-xs text-white/50 mb-1 font-semibold tracking-wider">VIDEO 2</span>
+              <span class="text-sm font-bold text-white px-4 text-center">Firmware Compilation & Cloud Databases Setup</span>
+            </div>
+            <div class="hero-card-header">
+              <span class="badge badge-cse">Firmware Coding</span>
               <span class="rating-stars"><i class="fa-solid fa-star"></i> 4.9</span>
             </div>
-            <h2 style="margin-bottom:15px; font-size:1.5rem;">IoT Smart Agriculture Monitoring & Irrigation System</h2>
-            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">Automated irrigation setup with ESP32, soil sensors, cloud telemetry, and a mobile dashboard.</p>
-            <div class="hero-card-code">
-              <code>ESP32_Irrigation_Controller.ino v2.1.0</code>
+            <div>
+              <h2 style="margin-bottom:8px; font-size:1.35rem; line-height:1.2;">Writing Arduino firmware step-by-step</h2>
+              <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:15px;">Setting up ESP32 wifi networks, config files, cloud connection strings.</p>
+              <div class="hero-card-code">
+                <code>wifi_credentials.h v1.0.4</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 3: Video 3 -->
+          <div class="hero-slide" data-slide-type="video" data-duration="30000">
+            <video class="slide-media-element" src="https://res.cloudinary.com/ddbquc9nq/video/upload/v1784551550/YTDown.com_Shorts_Humvee-HMMWV-Miniature-Build-in-8K-Ultra_Media_sll1X_FeKI0_002_720p_etsh78.mp4" muted playsinline preload="auto"></video>
+            <div class="slide-media-placeholder" style="display: none;">
+              <i class="fa-solid fa-gears text-accent text-4xl mb-3"></i>
+              <span class="text-xs text-white/50 mb-1 font-semibold tracking-wider">VIDEO 3</span>
+              <span class="text-sm font-bold text-white px-4 text-center">Mechanical Chassis Assembly</span>
+            </div>
+            <div class="hero-card-header">
+              <span class="badge badge-mech">Robotics Lab</span>
+              <span class="rating-stars"><i class="fa-solid fa-star"></i> 4.8</span>
+            </div>
+            <div>
+              <h2 style="margin-bottom:8px; font-size:1.35rem; line-height:1.2;">Autonomous Pathfinding LiDAR Robot</h2>
+              <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:15px;">Calibrating servo gear drives, ROS path nodes, assembling acrylic body shell.</p>
+              <div class="hero-card-code">
+                <code>lidar_slam_config.yaml</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 4: Photo 1 -->
+          <div class="hero-slide" data-slide-type="photo" data-duration="4000">
+            <img class="slide-media-element" src="https://i.postimg.cc/KzqfvRfy/role-benefit-of-gfc-drawings.webp" alt="Photo 1">
+            <div class="slide-media-placeholder" style="display: none;">
+              <i class="fa-solid fa-image text-accent text-4xl mb-3"></i>
+              <span class="text-xs text-white/50 mb-1 font-semibold tracking-wider"></span>
+              <span class="text-sm font-bold text-white px-4 text-center">Custom Schematics Blueprint Approval</span>
+            </div>
+            <div class="hero-card-header">
+              <span class="badge badge-ee">Schematic Design</span>
+              <span class="rating-stars"><i class="fa-solid fa-star"></i> 5.0</span>
+            </div>
+            <div>
+              <h2 style="margin-bottom:8px; font-size:1.35rem; line-height:1.2;">Industry Verified Blueprint Files</h2>
+              <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:15px;">Easy-to-read annotated schematics to guide your hardware assembly safely.</p>
+              <div class="hero-card-code">
+                <code>Schematics_Draft_v1.0.pdf</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 5: Photo 2 -->
+          <div class="hero-slide" data-slide-type="photo" data-duration="4000">
+            <img class="slide-media-element" src="https://i.postimg.cc/cJXFKgH7/All-in-One-Essential-Pro-kit-PARTS-LIST-3-min.png" alt="Photo 2">
+            <div class="slide-media-placeholder" style="display: none;">
+              <i class="fa-solid fa-microchip text-accent text-4xl mb-3"></i>
+              <span class="text-xs text-white/50 mb-1 font-semibold tracking-wider"></span>
+              <span class="text-sm font-bold text-white px-4 text-center">Premium Electronics Components Kits</span>
+            </div>
+            <div class="hero-card-header">
+              <span class="badge badge-ece">Component Store</span>
+              <span class="rating-stars"><i class="fa-solid fa-star"></i> 4.7</span>
+            </div>
+            <div>
+              <h2 style="margin-bottom:8px; font-size:1.35rem; line-height:1.2;">100% Tested Solid-State Modules</h2>
+              <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:15px;">Order matching verified kits directly sourced to your engineering lab.</p>
+              <div class="hero-card-code">
+                <code>ESP32_Sensor_Kit_List.pdf</code>
+              </div>
             </div>
           </div>
         </div>
@@ -287,10 +415,12 @@
         <div class="glass-panel" style="padding: 30px;">
           <h3 style="margin-bottom:20px;">Payment Options</h3>
           
+          <!-- Commented out for future restoration
           <div class="form-input-group" style="margin-bottom:20px;">
             <label>GST Number (Optional for GST Input Credit)</label>
             <input type="text" id="checkout-gst" placeholder="e.g. 27AAAAA1111A1Z1">
           </div>
+          -->
 
           <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:30px;">
             <label class="filter-option" style="padding:12px; background:var(--bg-input); border-radius:8px; border:1px solid var(--border-color);">
@@ -550,6 +680,9 @@
           <button class="dash-nav-btn" id="admin-btn-orders" onclick="app.admin.switchTab('orders')">
             <i class="fa-solid fa-cart-shopping"></i> Order Bookings
           </button>
+          <button class="dash-nav-btn" id="admin-btn-payment" onclick="app.admin.switchTab('payment')">
+            <i class="fa-solid fa-building-columns"></i> Payment Setup
+          </button>
         </aside>
 
         <!-- Admin Workspace Dynamic Content Pane -->
@@ -664,6 +797,40 @@
             <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.9rem;" id="admin-orders-table">
               <!-- Rendered by JS -->
             </table>
+          </div>
+
+          <!-- Admin Payment Setup Pane -->
+          <div id="admin-pane-payment" class="dashboard-content-pane">
+            <h3 style="margin-bottom:12px;">Payment Receiving Settings</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:24px;">
+              Configure your bank account and UPI details to receive customer payments.
+            </p>
+            
+            <form id="admin-payment-form" onsubmit="event.preventDefault(); app.admin.savePaymentSettings();" style="display:flex; flex-direction:column; gap:16px; max-width:500px;">
+              <div class="form-input-group">
+                <label>Account Holder Name</label>
+                <input type="text" id="admin-bank-name" placeholder="ProjectNest Inc.">
+              </div>
+              <div class="form-input-group">
+                <label>Bank Name</label>
+                <input type="text" id="admin-bank-brand" placeholder="HDFC Bank">
+              </div>
+              <div class="form-input-group">
+                <label>Account Number</label>
+                <input type="text" id="admin-bank-acc" placeholder="50100012345678">
+              </div>
+              <div class="form-input-group">
+                <label>IFSC Code</label>
+                <input type="text" id="admin-bank-ifsc" placeholder="HDFC0000240">
+              </div>
+              <div class="form-input-group">
+                <label>UPI ID (For QR Code Payments)</label>
+                <input type="text" id="admin-bank-upi" placeholder="projectnest@hdfcbank">
+              </div>
+              <button class="btn-primary" type="submit" style="width:fit-content; margin-top:10px;">
+                Save Payment Settings
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -1145,6 +1312,212 @@
       <button class="btn-primary" style="width:100%; justify-content:center; margin-top:20px;" onclick="app.admin.saveComponent()">
         Add to Inventory List
       </button>
+    </div>
+  </div>
+
+  <!-- Interactive Payment Gateway Simulator Modal -->
+  <div class="modal-overlay" id="modal-payment-gateway">
+    <div class="modal-content glass-panel payment-gateway-modal">
+      
+      <!-- Secure Payment Header -->
+      <div class="payment-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <i class="fa-solid fa-shield-halved" style="font-size:1.5rem; color:var(--color-accent);"></i>
+          <div>
+            <h4 style="font-size:1.05rem; margin:0; color:#fff;">ProjectNest Secure Pay</h4>
+            <span style="font-size:0.7rem; opacity:0.8; display:block;"><i class="fa-solid fa-lock"></i> 256-bit SSL Encrypted</span>
+          </div>
+        </div>
+        <button style="background:transparent; border:none; color:white; font-size:1.5rem; cursor:pointer;" onclick="app.modal.close('payment-gateway')">&times;</button>
+      </div>
+
+      <!-- Amount Banner -->
+      <div class="payment-amount-bar">
+        <span>Order Amount:</span>
+        <b style="font-size:1.2rem; color:var(--color-primary);" id="pay-gateway-total">₹0</b>
+      </div>
+
+      <!-- Mode Tabs -->
+      <div class="payment-tabs" id="pay-gateway-tabs">
+        <div class="payment-tab active" data-tab="upi" onclick="app.payment.switchTab('upi')">
+          <i class="fa-solid fa-qrcode" style="margin-right:6px;"></i> UPI
+        </div>
+        <div class="payment-tab" data-tab="card" onclick="app.payment.switchTab('card')">
+          <i class="fa-solid fa-credit-card" style="margin-right:6px;"></i> Card
+        </div>
+        <div class="payment-tab" data-tab="netbanking" onclick="app.payment.switchTab('netbanking')">
+          <i class="fa-solid fa-building-columns" style="margin-right:6px;"></i> Netbanking
+        </div>
+      </div>
+
+      <!-- Payment Gateway Content Body -->
+      <div class="payment-body" id="pay-gateway-body">
+        
+        <!-- Main Form Panes -->
+        <div id="pay-gateway-forms">
+          <!-- UPI Pane -->
+          <div class="payment-pane active" id="pay-pane-upi">
+            <div class="upi-qr-area">
+              <div class="upi-qr-code">
+                <!-- Inline SVG QR Code representation -->
+                <svg width="140" height="140" viewBox="0 0 29 29" style="display:block;">
+                  <path d="M0 0h7v7H0zm1 1v5h5V1zm10 0h2v1h-1v1h-1zm3 0h1v1h-1zm1 0h1v2h-1zm6 0h7v7h-7zm1 1v5h5V1zM2 2h3v3H2zm20 0h3v3h-3zM0 9h1v1H0zm2 0h1v1H2zm2 0h3v1H4zm4 0h1v1H8zm2 0h2v1h-2zm4 0h1v3h-1zm3 0h2v2h-2zm3 0h1v1h-1zm1 0h1v1h-1zm-15 2h1v1H3zm2 0h1v1H5zm6 0h1v2h-1zm10 0h1v1h-1zm3 0h1v2h-1zM0 12h3v1H0zm4 0h2v1H4zm2 0h1v1H6zm2 0h1v1H8zm5 0h1v2h-1zm3 0h1v1h-1zm4 0h2v1H2zm3 0h2v1H2zm-22 2h1v1H1zm3 0h3v1H4zm3 0h1v1H7zm1 0h2v1H8zm4 0h1v1h-1zm3 0h1v2h-1zm3 0h1v1h-1zm1 0h1v1h-1zm2 0h1v1h-1zm1 0h2v1h-1zm-21 2h1v1H0zm2 0h1v1H2zm3 0h1v1H5zm5 0h1v1h-1zm2 0h1v1h-1zm1 0h1v1h-1zm2 0h1v1h-1zm2 0h2v1h-2zm4 0h1v1h-1zm3 0h1v1h-1zm-24 2h7v7H0zm1 1v5h5V19zm15 0h1v1h-1zm1 0h2v1h-2zm4 0h1v1h-1zm3 0h1v2h-1zm-22 2h3v3H2zm11 0h1v1h-1zm3 0h1v1h-1zm5 0h1v2h-1zm-9 2h2v1h-2zm3 0h1v1h-1zm2 0h1v1h-1zm3 0h1v1h-1zm-10 1h2v1h-2zm3 0h1v1h-1zm5 0h3v1h-3z" fill="#111827"/>
+                </svg>
+              </div>
+              <span id="pay-gateway-upi-recipient" style="font-size:0.85rem; font-weight:700; color:var(--color-accent); margin-top:4px; display:block;">Recipient: projectnest@upi</span>
+              <span style="font-size:0.8rem; color:var(--text-secondary);"><i class="fa-solid fa-arrows-spin fa-spin" style="color:var(--color-primary);"></i> QR Code updates dynamically for secure payment.</span>
+            </div>
+            
+            <div style="text-align:center; margin-bottom:16px; font-weight:600; color:var(--text-muted); font-size:0.85rem;">— OR ENTER UPI ID —</div>
+            <div class="form-input-group">
+              <input type="text" id="pay-upi-id" placeholder="e.g. johndoe@upi" style="text-align:center; font-weight:600;">
+            </div>
+            
+            <button class="btn-primary" style="width:100%; justify-content:center; margin-top:20px; padding:12px;" onclick="app.payment.submitUPI()">
+              Verify & Pay Securely
+            </button>
+          </div>
+
+          <!-- Card Pane -->
+          <div class="payment-pane" id="pay-pane-card">
+            <!-- 3D Card Preview container -->
+            <div class="card-preview-wrapper">
+              <div class="card-preview-inner" id="card-preview-inner">
+                <!-- Front Side -->
+                <div class="card-face front">
+                  <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <div class="card-chip"></div>
+                    <div class="card-logo" id="card-preview-brand">VISA</div>
+                  </div>
+                  <div class="card-number-label" id="card-preview-number">•••• •••• •••• ••••</div>
+                  <div class="card-meta-row">
+                    <div>
+                      <span style="font-size:0.6rem; opacity:0.7; display:block;">Card Holder</span>
+                      <span id="card-preview-name" style="font-weight:600; letter-spacing:1px;">YOUR NAME</span>
+                    </div>
+                    <div style="text-align:right;">
+                      <span style="font-size:0.6rem; opacity:0.7; display:block;">Expires</span>
+                      <span id="card-preview-expiry" style="font-weight:600;">MM/YY</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Back Side -->
+                <div class="card-face back">
+                  <div class="card-black-strip"></div>
+                  <div class="card-signature-area">
+                    <span style="font-size:0.55rem; opacity:0.7; text-align:right; margin-right:20px;">AUTHORIZED SIGNATURE</span>
+                    <div class="card-sig-line">
+                      <span id="card-preview-cvv">•••</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Inputs Form -->
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div class="form-input-group">
+                <label>Cardholder Name</label>
+                <input type="text" id="pay-card-name" placeholder="John Doe" oninput="app.payment.updateCardPreview()" maxlength="22">
+              </div>
+              <div class="form-input-group">
+                <label>Card Number</label>
+                <input type="text" id="pay-card-number" placeholder="4111 2222 3333 4444" oninput="app.payment.updateCardPreview()" maxlength="19">
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-input-group">
+                  <label>Expiry Date</label>
+                  <input type="text" id="pay-card-expiry" placeholder="MM/YY" oninput="app.payment.updateCardPreview()" maxlength="5">
+                </div>
+                <div class="form-input-group">
+                  <label>CVV Number</label>
+                  <input type="password" id="pay-card-cvv" placeholder="•••" oninput="app.payment.updateCardPreview()" onfocus="app.payment.flipCard(true)" onblur="app.payment.flipCard(false)" maxlength="3">
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-primary" style="width:100%; justify-content:center; margin-top:20px; padding:12px;" onclick="app.payment.submitCard()">
+              Process Card Payment
+            </button>
+          </div>
+
+          <!-- Netbanking Pane -->
+          <div class="payment-pane" id="pay-pane-netbanking">
+            <h4 style="font-size:0.9rem; margin-bottom:12px; color:var(--text-secondary);">Select Popular Banks:</h4>
+            
+            <div class="nb-grid">
+              <div class="nb-bank-btn" data-bank="SBI" onclick="app.payment.selectBank('SBI', this)">
+                <i class="fa-solid fa-building-columns" style="color:#00a3e0;"></i> SBI
+              </div>
+              <div class="nb-bank-btn" data-bank="HDFC" onclick="app.payment.selectBank('HDFC', this)">
+                <i class="fa-solid fa-building-columns" style="color:#1e3a8a;"></i> HDFC
+              </div>
+              <div class="nb-bank-btn" data-bank="ICICI" onclick="app.payment.selectBank('ICICI', this)">
+                <i class="fa-solid fa-building-columns" style="color:#f58220;"></i> ICICI
+              </div>
+              <div class="nb-bank-btn" data-bank="AXIS" onclick="app.payment.selectBank('AXIS', this)">
+                <i class="fa-solid fa-building-columns" style="color:#ae1c4e;"></i> AXIS
+              </div>
+              <div class="nb-bank-btn" data-bank="KOTAK" onclick="app.payment.selectBank('KOTAK', this)">
+                <i class="fa-solid fa-building-columns" style="color:#ed1c24;"></i> KOTAK
+              </div>
+              <div class="nb-bank-btn" data-bank="PNB" onclick="app.payment.selectBank('PNB', this)">
+                <i class="fa-solid fa-building-columns" style="color:#ffb700;"></i> PNB
+              </div>
+            </div>
+            
+            <div class="form-input-group" style="margin-top:16px;">
+              <label>Or Choose Other Bank</label>
+              <select id="pay-nb-select">
+                <option value="">-- Choose Bank --</option>
+                <option value="IDBI">IDBI Bank</option>
+                <option value="BOB">Bank of Baroda</option>
+                <option value="CANARA">Canara Bank</option>
+                <option value="YES">Yes Bank</option>
+                <option value="INDUSIND">IndusInd Bank</option>
+              </select>
+            </div>
+
+            <button class="btn-primary" style="width:100%; justify-content:center; margin-top:24px; padding:12px;" onclick="app.payment.submitNetbanking()">
+              Pay via Netbanking
+            </button>
+          </div>
+        </div>
+
+        <!-- 2FA OTP Screen Overlay -->
+        <div id="pay-gateway-otp-screen" style="display:none; text-align:center;">
+          <h4 style="font-size:1.1rem; margin-bottom:8px;">Two-Factor Authentication</h4>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:20px;">We have sent a 6-digit secure transaction OTP code. Enter the code below to authorize payment.</p>
+          
+          <div class="otp-container">
+            <input type="text" class="otp-digit" maxlength="1" onkeyup="app.payment.otpMove(this, event)">
+            <input type="text" class="otp-digit" maxlength="1" onkeyup="app.payment.otpMove(this, event)">
+            <input type="text" class="otp-digit" maxlength="1" onkeyup="app.payment.otpMove(this, event)">
+            <input type="text" class="otp-digit" maxlength="1" onkeyup="app.payment.otpMove(this, event)">
+            <input type="text" class="otp-digit" maxlength="1" onkeyup="app.payment.otpMove(this, event)">
+            <input type="text" class="otp-digit" maxlength="1" onkeyup="app.payment.otpMove(this, event)">
+          </div>
+
+          <button class="btn-primary" style="width:100%; justify-content:center; margin-top:20px; padding:12px;" onclick="app.payment.verifyOTP()">
+            Confirm Transaction
+          </button>
+        </div>
+
+        <!-- Secure Loader Screen Overlay -->
+        <div id="pay-gateway-loading-screen" style="display:none;">
+          <div class="payment-loader">
+            <div id="pay-gateway-spinner">
+              <i class="fa-solid fa-spinner fa-spin" style="font-size:3rem; color:var(--color-primary);"></i>
+            </div>
+            <div id="pay-gateway-tick" style="display:none;">
+              <i class="fa-solid fa-circle-check payment-success-tick"></i>
+            </div>
+            <h4 id="pay-gateway-loader-title" style="font-size:1.15rem; margin-top:10px;">Contacting Payment Gateway...</h4>
+            <p id="pay-gateway-loader-desc" style="font-size:0.85rem; color:var(--text-secondary);">Securing transaction line. Please do not close this window or hit refresh.</p>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 

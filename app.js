@@ -5,7 +5,7 @@
 
 const app = {
     // Backend URL configuration
-    apiUrl: "https://projectnest-xd7u.onrender.com/api",
+    API_URL: "http://127.0.0.1:5000/api",
 
     // Global State Database Cache
   
@@ -315,10 +315,29 @@ app.auth = {
       return;
     }
 
-    // OTP verification simulated
-    const otp = prompt('Mock OTP Verification: An OTP has been sent to ' + email + '. Enter "1234" to verify:');
-    if (otp !== '1234') {
-      app.toast.show('Invalid OTP code. Account registration failed!', 'error');
+    // Request OTP from backend
+    try {
+      app.toast.show('Sending OTP to ' + email + '...', 'info');
+      const otpRequest = await fetch(app.API_URL + '/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const otpRequestData = await otpRequest.json();
+      if (!otpRequest.ok) {
+        app.toast.show(otpRequestData.error || 'Failed to send OTP. Please try again.', 'error');
+        return;
+      }
+      app.toast.show('OTP sent successfully!', 'success');
+    } catch (err) {
+      console.error(err);
+      app.toast.show('Failed connecting to OTP server', 'error');
+      return;
+    }
+
+    const otp = prompt('OTP Verification: An OTP has been sent to ' + email + '. Enter the code to verify:');
+    if (!otp) {
+      app.toast.show('Registration cancelled. OTP is required.', 'error');
       return;
     }
 
@@ -327,7 +346,7 @@ app.auth = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email, name, mobile, college, uni, branch, semester: sem, password: pass
+          email, name, mobile, college, uni, branch, semester: sem, password: pass, otp
         })
       });
       const resData = await response.json();
@@ -359,6 +378,10 @@ app.auth = {
 
 // --- LANDING PAGE RENDERING ---
 app.landing = {
+  sliderTimer: null,
+  sliderInterval: null,
+  tickerInterval: null,
+
   render: function() {
     // Render Category Cards
     const cats = [
@@ -385,6 +408,10 @@ app.landing = {
     if (projContainer) {
       projContainer.innerHTML = featured.map(p => app.projects.createCardHtml(p)).join('');
     }
+
+    // Initialize premium landing components
+    this.initSlider();
+    this.initTicker();
   },
 
   clickCategory: function(catId) {
@@ -396,6 +423,95 @@ app.landing = {
         app.projects.applyFilters();
       }
     }, 100);
+  },
+
+  initSlider: function() {
+    const container = document.querySelector('.hero-slider-container');
+    if (!container) return;
+
+    const slides = container.querySelectorAll('.hero-slide');
+    const indicator = document.getElementById('slider-dash-indicator');
+    if (slides.length === 0) return;
+
+    // Reset indicator dashes to match number of slides dynamically
+    if (indicator) {
+      indicator.innerHTML = Array.from(slides).map(() => `
+        <div class="progress-dash"><div class="progress-dash-fill"></div></div>
+      `).join('');
+    }
+
+    // Clear previous runs
+    if (this.sliderTimer) clearTimeout(this.sliderTimer);
+    if (this.sliderInterval) clearInterval(this.sliderInterval);
+
+    let currentIdx = 0;
+    const self = this;
+
+    function showSlide(idx) {
+      // Clear interval/timer for the previous slide transition
+      clearInterval(self.sliderInterval);
+      clearTimeout(self.sliderTimer);
+
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === idx);
+        const video = slide.querySelector('video');
+        if (video) {
+          video.pause();
+          video.currentTime = 0;
+        }
+      });
+
+      const dashes = indicator ? indicator.querySelectorAll('.progress-dash-fill') : [];
+      dashes.forEach((dash, i) => {
+        dash.style.width = i < idx ? '100%' : '0%';
+      });
+
+      const activeSlide = slides[idx];
+      const duration = parseInt(activeSlide.getAttribute('data-duration')) || 5000;
+      
+      const video = activeSlide.querySelector('video');
+      if (video) {
+        video.play().catch(err => console.log('Autoplay blocked:', err));
+      }
+
+      const startTime = Date.now();
+      const activeDash = dashes[idx];
+
+      if (activeDash) {
+        self.sliderInterval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const pct = Math.min((elapsed / duration) * 100, 100);
+          activeDash.style.width = pct + '%';
+          if (pct >= 100) {
+            clearInterval(self.sliderInterval);
+          }
+        }, 50);
+      }
+
+      self.sliderTimer = setTimeout(() => {
+        currentIdx = (currentIdx + 1) % slides.length;
+        showSlide(currentIdx);
+      }, duration);
+    }
+
+    showSlide(0);
+  },
+
+  initTicker: function() {
+    const tickerContainer = document.getElementById('live-activity-ticker');
+    if (!tickerContainer) return;
+
+    const items = tickerContainer.querySelectorAll('.ticker-item');
+    if (items.length === 0) return;
+
+    if (this.tickerInterval) clearInterval(this.tickerInterval);
+
+    let currentIdx = 0;
+    this.tickerInterval = setInterval(() => {
+      items[currentIdx].classList.remove('active');
+      currentIdx = (currentIdx + 1) % items.length;
+      items[currentIdx].classList.add('active');
+    }, 4000);
   }
 };
 
@@ -985,7 +1101,7 @@ app.cart = {
 
   applyCoupon: function() {
     const code = document.getElementById('checkout-coupon').value.trim().toUpperCase();
-    if (code === 'PROJECT10') {
+      if (code === 'PROJECT10') {
       this.couponApplied = 'PROJECT10';
       app.toast.show('10% Coupon code applied successfully!', 'success');
       this.renderCheckout();
@@ -1001,7 +1117,8 @@ app.cart = {
     const disc = this.couponApplied ? Math.round(subtotal * 0.10) : 0;
     const gst = Math.round((subtotal - disc) * 0.18);
     const total = subtotal - disc + gst;
-    const gstNumber = document.getElementById('checkout-gst').value || 'N/A';
+    const gstInput = document.getElementById('checkout-gst');
+    const gstNumber = gstInput ? gstInput.value : 'N/A';
     const method = document.querySelector('input[name="payment-method"]:checked').value;
 
     const checkoutData = {
@@ -1014,6 +1131,248 @@ app.cart = {
       email: app.db.currentUser.email,
       items: app.db.cart
     };
+
+    // Trigger Interactive Secure Payment Simulator Modal
+    app.payment.openGateway(checkoutData);
+  }
+};
+
+// --- SECURE PAYMENT GATEWAY SIMULATOR ---
+app.payment = {
+  activeTab: 'upi',
+  checkoutData: null,
+  otpCode: null,
+  selectedBank: null,
+
+  openGateway: function(data) {
+    this.checkoutData = data;
+    this.activeTab = 'upi';
+    this.selectedBank = null;
+    this.otpCode = null;
+
+    // Display order amount
+    document.getElementById('pay-gateway-total').innerText = `₹${data.totalPrice.toLocaleString()}`;
+
+    // Reset view states
+    document.getElementById('pay-gateway-forms').style.display = 'block';
+    document.getElementById('pay-gateway-otp-screen').style.display = 'none';
+    document.getElementById('pay-gateway-loading-screen').style.display = 'none';
+
+    // Reset form field values
+    document.getElementById('pay-upi-id').value = '';
+    document.getElementById('pay-card-name').value = '';
+    document.getElementById('pay-card-number').value = '';
+    document.getElementById('pay-card-expiry').value = '';
+    document.getElementById('pay-card-cvv').value = '';
+    document.getElementById('pay-nb-select').value = '';
+    document.querySelectorAll('.nb-bank-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.otp-digit').forEach(input => input.value = '');
+
+    // Display initial tab
+    this.switchTab('upi');
+
+    // Load custom Admin payment settings if configured
+    const adminSettings = localStorage.getItem('admin_bank_settings');
+    let recipientUPI = 'projectnest@upi';
+    if (adminSettings) {
+      try {
+        const parsed = JSON.parse(adminSettings);
+        if (parsed.upiId) {
+          recipientUPI = parsed.upiId;
+        }
+      } catch (e) {}
+    }
+    const upiElement = document.getElementById('pay-gateway-upi-recipient');
+    if (upiElement) {
+      upiElement.innerText = `Recipient: ${recipientUPI}`;
+    }
+
+    // Trigger visual components refresh
+    this.updateCardPreview();
+
+    // Launch overlay
+    app.modal.open('payment-gateway');
+  },
+
+  switchTab: function(tabId) {
+    this.activeTab = tabId;
+    
+    // Manage tab selectors
+    document.querySelectorAll('#pay-gateway-tabs .payment-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
+    });
+
+    // Display target forms pane
+    document.querySelectorAll('#pay-gateway-body .payment-pane').forEach(pane => {
+      pane.classList.toggle('active', pane.getAttribute('id') === `pay-pane-${tabId}`);
+    });
+  },
+
+  updateCardPreview: function() {
+    const name = document.getElementById('pay-card-name').value || 'YOUR NAME';
+    let number = document.getElementById('pay-card-number').value || '•••• •••• •••• ••••';
+    const expiry = document.getElementById('pay-card-expiry').value || 'MM/YY';
+    const cvv = document.getElementById('pay-card-cvv').value || '•••';
+
+    // Auto card spacing formatter
+    let rawNumber = number.replace(/\D/g, '');
+    let formattedNumber = '';
+    for (let i = 0; i < rawNumber.length; i++) {
+      if (i > 0 && i % 4 === 0) formattedNumber += ' ';
+      formattedNumber += rawNumber[i];
+    }
+    document.getElementById('pay-card-number').value = formattedNumber;
+    document.getElementById('card-preview-number').innerText = formattedNumber || '•••• •••• •••• ••••';
+
+    // Expiry date formatter (MM/YY)
+    let rawExpiry = expiry.replace(/\D/g, '');
+    let formattedExpiry = '';
+    if (rawExpiry.length > 2) {
+      formattedExpiry = rawExpiry.substring(0, 2) + '/' + rawExpiry.substring(2, 4);
+    } else {
+      formattedExpiry = rawExpiry;
+    }
+    document.getElementById('pay-card-expiry').value = formattedExpiry;
+    document.getElementById('card-preview-expiry').innerText = formattedExpiry || 'MM/YY';
+
+    document.getElementById('card-preview-name').innerText = name.toUpperCase() || 'YOUR NAME';
+    document.getElementById('card-preview-cvv').innerText = cvv;
+
+    // Simple Card Brand Identification logic
+    let brand = 'VISA';
+    if (rawNumber.startsWith('5')) {
+      brand = 'MASTERCARD';
+    } else if (rawNumber.startsWith('6')) {
+      brand = 'RUPAY';
+    } else if (rawNumber.startsWith('3')) {
+      brand = 'AMEX';
+    }
+    document.getElementById('card-preview-brand').innerText = brand;
+  },
+
+  flipCard: function(isFlipped) {
+    const cardInner = document.getElementById('card-preview-inner');
+    if (cardInner) {
+      cardInner.classList.toggle('flipped', isFlipped);
+    }
+  },
+
+  selectBank: function(bankId, element) {
+    this.selectedBank = bankId;
+    document.querySelectorAll('.nb-bank-btn').forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    document.getElementById('pay-nb-select').value = '';
+  },
+
+  submitUPI: function() {
+    const upiId = document.getElementById('pay-upi-id').value.trim();
+    if (!upiId) {
+      // Allow simulator to continue via QR code option
+      this.triggerLoading("Initiating QR Code Scan Verification...");
+      return;
+    }
+
+    if (!upiId.includes('@')) {
+      app.toast.show('Please input a valid UPI ID (e.g. user@bank)', 'error');
+      return;
+    }
+
+    this.triggerLoading(`Sending UPI transaction request to ${upiId}...`);
+  },
+
+  submitNetbanking: function() {
+    const customBank = document.getElementById('pay-nb-select').value;
+    const bank = this.selectedBank || customBank;
+
+    if (!bank) {
+      app.toast.show('Please select a bank to process payment', 'error');
+      return;
+    }
+
+    this.triggerLoading(`Redirecting to ${bank} Secure Netbanking Terminal...`);
+  },
+
+  submitCard: function() {
+    const name = document.getElementById('pay-card-name').value.trim();
+    const number = document.getElementById('pay-card-number').value.replace(/\s+/g, '');
+    const expiry = document.getElementById('pay-card-expiry').value;
+    const cvv = document.getElementById('pay-card-cvv').value;
+
+    if (!name || number.length < 16 || expiry.length < 5 || cvv.length < 3) {
+      app.toast.show('Please fill in card details correctly', 'error');
+      return;
+    }
+
+    // Generate secure sandbox verification OTP
+    this.otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Switch views to OTP validation
+    document.getElementById('pay-gateway-forms').style.display = 'none';
+    document.getElementById('pay-gateway-otp-screen').style.display = 'block';
+
+    setTimeout(() => {
+      app.toast.show(`[SIMULATOR] Secure 2FA OTP Code: ${this.otpCode}`, 'info');
+    }, 800);
+  },
+
+  otpMove: function(input, event) {
+    if (input.value.length === 1 && input.nextElementSibling) {
+      input.nextElementSibling.focus();
+    }
+    if (event.key === 'Backspace' && input.previousElementSibling) {
+      input.previousElementSibling.focus();
+    }
+  },
+
+  verifyOTP: function() {
+    const inputs = document.querySelectorAll('.otp-digit');
+    let code = '';
+    inputs.forEach(input => code += input.value.trim());
+
+    if (code !== this.otpCode) {
+      app.toast.show('Incorrect verification code. Please check and retry.', 'error');
+      return;
+    }
+
+    // Advance verification
+    document.getElementById('pay-gateway-otp-screen').style.display = 'none';
+    this.triggerLoading("OTP Validated! Processing Secure Order...");
+  },
+
+  triggerLoading: function(statusTitle) {
+    document.getElementById('pay-gateway-forms').style.display = 'none';
+    document.getElementById('pay-gateway-otp-screen').style.display = 'none';
+    
+    const loadingScreen = document.getElementById('pay-gateway-loading-screen');
+    loadingScreen.style.display = 'block';
+
+    document.getElementById('pay-gateway-spinner').style.display = 'block';
+    document.getElementById('pay-gateway-tick').style.display = 'none';
+    document.getElementById('pay-gateway-loader-title').innerText = statusTitle;
+    document.getElementById('pay-gateway-loader-desc').innerText = "Securing transaction tunnel. Please do not close this window.";
+
+    const self = this;
+    setTimeout(() => {
+      document.getElementById('pay-gateway-loader-title').innerText = "Authorizing Fund Clearance...";
+      
+      setTimeout(() => {
+        document.getElementById('pay-gateway-spinner').style.display = 'none';
+        document.getElementById('pay-gateway-tick').style.display = 'block';
+        document.getElementById('pay-gateway-loader-title').innerText = "Payment Successful!";
+        document.getElementById('pay-gateway-loader-desc').innerText = "Clearing funds and writing receipt to database...";
+
+        setTimeout(async () => {
+          app.modal.close('payment-gateway');
+          await self.executeFinalCheckout();
+        }, 1500);
+
+      }, 1500);
+    }, 1500);
+  },
+
+  executeFinalCheckout: async function() {
+    const checkoutData = this.checkoutData;
+    if (!checkoutData) return;
 
     try {
       const response = await fetch(app.API_URL + '/orders', {
@@ -1028,7 +1387,7 @@ app.cart = {
         return;
       }
 
-      // Add appointments separately to appointments endpoint
+      // Add appointments separately
       for (const item of app.db.cart) {
         if (item.type === 'mentorship') {
           await fetch(app.API_URL + '/appointments', {
@@ -1045,11 +1404,11 @@ app.cart = {
         }
       }
 
-      // Clear cart
+      // Clear local cart database
       app.db.cart = [];
-      this.couponApplied = null;
-      this.save();
-      app.toast.show('Payment Successful! Order Confirmed.', 'success');
+      app.cart.couponApplied = null;
+      app.cart.save();
+      app.toast.show('Payment Confirmed! Invoices generated.', 'success');
 
       // Generate invoice bill layout
       const mainPane = document.getElementById('view-checkout');
@@ -1057,87 +1416,94 @@ app.cart = {
         <div class="glass-panel" style="padding:40px; max-width:800px; margin:0 auto; text-align:center;">
           <i class="fa-solid fa-circle-check" style="font-size:4rem; color:var(--color-success); margin-bottom:20px;"></i>
           <h2>Thank You for Your Order!</h2>
-          <p style="color:var(--text-secondary); margin-bottom:30px;">Your transaction was completed successfully. Below is your generated invoice.</p>
+          <p style="color:var(--text-secondary); margin-bottom:30px;">Your transaction was completed successfully.</p>
           
           <button class="btn-primary" onclick="window.print()" style="margin-bottom:30px;"><i class="fa-solid fa-print"></i> Print GST Bill / Invoice</button>
           <button class="btn-secondary" onclick="app.router.navigate('dashboard')" style="margin-bottom:30px; margin-left:12px;">Go to My Dashboard</button>
 
-          <div class="invoice-card" style="text-align:left;">
-            <div class="invoice-header">
+          <div class="invoice-card" style="text-align:left; background:#fff; padding:30px; color:#333; border-radius:8px;">
+            <div class="invoice-header" style="display:flex; justify-content:space-between; margin-bottom:30px;">
               <div>
-                <div class="invoice-logo">ProjectNest Hub</div>
+                <div class="invoice-logo" style="font-size:1.5rem; font-weight:800;">ProjectNest Hub</div>
                 <p style="font-size:0.8rem; color:#666;">24, Innovation Park, Delhi, IN</p>
-                <p style="font-size:0.8rem; color:#666;">GSTIN: 07AAACP8888F1Z2</p>
               </div>
               <div style="text-align:right;">
                 <h2 style="color:#111; font-size:1.5rem; margin-bottom:6px;">INVOICE</h2>
-                <p style="font-size:0.85rem;"><b>Invoice No:</b> ${resData.orderId}</p>
+                <p style="font-size:0.85rem;"><b>ID:</b> ${resData.orderId}</p>
                 <p style="font-size:0.85rem;"><b>Date:</b> ${new Date().toISOString().split('T')[0]}</p>
               </div>
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; font-size:0.85rem; margin-bottom:30px; color:#333;">
               <div>
-                <h4 style="color:#111; margin-bottom:6px;">Billed To:</h4>
-                <p><b>Name:</b> ${app.db.currentUser.name}</p>
-                <p><b>Email:</b> ${app.db.currentUser.email}</p>
-                <p><b>College:</b> ${app.db.currentUser.college}</p>
+                <h4 style="color:#111; font-size:0.95rem; margin-bottom:6px;">Billed To:</h4>
+                <p>${checkoutData.email}</p>
+                <!-- <p>GSTIN: ${checkoutData.gstNumber}</p> -->
               </div>
               <div style="text-align:right;">
-                <h4 style="color:#111; margin-bottom:6px;">Payment Details:</h4>
-                <p><b>Method:</b> ${method.toUpperCase()}</p>
-                <p><b>GSTIN:</b> ${gstNumber}</p>
-                <p><b>Status:</b> PAID</p>
+                <h4 style="color:#111; font-size:0.95rem; margin-bottom:6px;">Payment Summary:</h4>
+                <p>Payment Mode: ${checkoutData.paymentMethod.toUpperCase()}</p>
+                <p>Status: <span style="color:var(--color-success); font-weight:700;">PAID</span></p>
               </div>
             </div>
 
-            <table class="invoice-details-table">
+            <table class="invoice-table" style="width:100%; border-collapse:collapse; margin-bottom:30px; font-size:0.85rem; color:#333;">
               <thead>
-                <tr>
-                  <th>Description</th>
-                  <th style="text-align:center;">Qty</th>
-                  <th style="text-align:right;">Unit Price</th>
-                  <th style="text-align:right;">Amount</th>
+                <tr style="border-bottom:2px solid #ddd; text-align:left; font-weight:700;">
+                  <th style="padding:10px 0;">Item Description</th>
+                  <th style="padding:10px 0; text-align:center;">Qty</th>
+                  <th style="padding:10px 0; text-align:right;">Unit Price</th>
+                  <th style="padding:10px 0; text-align:right;">Total</th>
                 </tr>
               </thead>
               <tbody>
                 ${checkoutData.items.map(item => `
-                  <tr>
-                    <td>${item.name}</td>
-                    <td style="text-align:center;">${item.qty}</td>
-                    <td style="text-align:right;">₹${item.price.toLocaleString()}</td>
-                    <td style="text-align:right;">₹${(item.price * item.qty).toLocaleString()}</td>
+                  <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:10px 0;">${item.name} <span style="font-size:0.75rem; color:#666; display:block;">Type: ${item.type}</span></td>
+                    <td style="padding:10px 0; text-align:center;">${item.qty}</td>
+                    <td style="padding:10px 0; text-align:right;">₹${item.price.toLocaleString()}</td>
+                    <td style="padding:10px 0; text-align:right;">₹${(item.price * item.qty).toLocaleString()}</td>
                   </tr>
                 `).join('')}
-                <tr style="border-top:2px solid #3b82f6;">
-                  <td colspan="2"></td>
-                  <td style="text-align:right; font-weight:600;">Subtotal</td>
-                  <td style="text-align:right; font-weight:600;">₹${subtotal.toLocaleString()}</td>
-                </tr>
-                ${disc > 0 ? `
-                  <tr>
-                    <td colspan="2"></td>
-                    <td style="text-align:right; font-weight:600; color:green;">Discount</td>
-                    <td style="text-align:right; font-weight:600; color:green;">-₹${disc.toLocaleString()}</td>
-                  </tr>
-                ` : ''}
-                <tr>
-                  <td colspan="2"></td>
-                  <td style="text-align:right; font-weight:600;">CGST + SGST (18%)</td>
-                  <td style="text-align:right; font-weight:600;">₹${gst.toLocaleString()}</td>
-                </tr>
-                <tr style="font-size:1.1rem; font-weight:700;">
-                  <td colspan="2"></td>
-                  <td style="text-align:right; color:#1e3a8a;">Total Amount</td>
-                  <td style="text-align:right; color:#1e3a8a;">₹${total.toLocaleString()}</td>
-                </tr>
               </tbody>
             </table>
+
+            <div style="width:100%; display:flex; justify-content:flex-end;">
+              <div style="width:300px; display:flex; flex-direction:column; gap:8px; font-size:0.85rem; color:#333;">
+                <div class="flex-space">
+                  <span>Subtotal</span>
+                  <span>₹${checkoutData.subtotal.toLocaleString()}</span>
+                </div>
+                ${checkoutData.discount > 0 ? `
+                  <div class="flex-space" style="color:var(--color-danger);">
+                    <span>Discount (10%)</span>
+                    <span>-₹${checkoutData.discount.toLocaleString()}</span>
+                  </div>
+                ` : ''}
+                <div class="flex-space">
+                  <span>GST (18%)</span>
+                  <span>₹${checkoutData.gst.toLocaleString()}</span>
+                </div>
+                <div class="flex-space" style="font-size:1.1rem; font-weight:700; border-top:2px solid #333; padding-top:8px; color:#111;">
+                  <span>Grand Total</span>
+                  <span>₹${checkoutData.totalPrice.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="text-align:center; border-top:1px dashed #ccc; padding-top:20px; margin-top:40px; font-size:0.75rem; color:#999;">
+              This is a computer-generated receipt and requires no signature.
+            </div>
           </div>
         </div>
       `;
+
+      // Update sidebar view / scroll to top
+      window.scrollTo(0, 0);
+
     } catch (err) {
-      app.toast.show('Checkout transaction processing connection error', 'error');
+      console.error(err);
+      app.toast.show('Checkout process encountered a network error!', 'error');
     }
   }
 };
@@ -1657,6 +2023,8 @@ app.admin = {
     } else if (tabId === 'orders') {
       await this.loadOrdersList();
       this.renderOrders();
+    } else if (tabId === 'payment') {
+      this.loadPaymentSettings();
     }
   },
 
@@ -1999,6 +2367,35 @@ app.admin = {
     } catch (err) {
       console.error(err);
     }
+  },
+
+  loadPaymentSettings: function() {
+    const dataStr = localStorage.getItem('admin_bank_settings');
+    if (dataStr) {
+      try {
+        const settings = JSON.parse(dataStr);
+        document.getElementById('admin-bank-name').value = settings.name || '';
+        document.getElementById('admin-bank-brand').value = settings.bankName || '';
+        document.getElementById('admin-bank-acc').value = settings.account || '';
+        document.getElementById('admin-bank-ifsc').value = settings.ifsc || '';
+        document.getElementById('admin-bank-upi').value = settings.upiId || '';
+      } catch (e) {
+        console.error("Failed to parse admin payment settings", e);
+      }
+    }
+  },
+
+  savePaymentSettings: function() {
+    const settings = {
+      name: document.getElementById('admin-bank-name').value.trim(),
+      bankName: document.getElementById('admin-bank-brand').value.trim(),
+      account: document.getElementById('admin-bank-acc').value.trim(),
+      ifsc: document.getElementById('admin-bank-ifsc').value.trim(),
+      upiId: document.getElementById('admin-bank-upi').value.trim()
+    };
+
+    localStorage.setItem('admin_bank_settings', JSON.stringify(settings));
+    app.toast.show('Payment Settings Saved Successfully!', 'success');
   }
 };
 

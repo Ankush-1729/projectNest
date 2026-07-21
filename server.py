@@ -2,10 +2,16 @@ import os
 import sqlite3
 import uuid
 import json
+import random
+import smtplib
+from email.mime.text import MIMEText
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS  # 1. Import it
 
 app = Flask(__name__)
+CORS(app)  # 2. Enable it for your app
+
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -250,6 +256,18 @@ init_db()
 def serve_uploads(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# --- SERVE FRONTEND STATIC FILES ---
+@app.route('/')
+def serve_index():
+    return send_from_directory(BASE_DIR, 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    # Security filter: block access to system/sensitive files
+    if filename.endswith('.py') or filename.endswith('.db') or filename.endswith('.txt') or filename.startswith('.'):
+        return jsonify({"error": "Forbidden"}), 403
+    return send_from_directory(BASE_DIR, filename)
+
 # --- AUTH ENDPOINTS ---
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -276,13 +294,96 @@ def login():
         })
     return jsonify({"error": "Invalid credentials"}), 401
 
+# --- IN-MEMORY OTP STORE ---
+# Key: email, Value: {"otp": otp, "expires_at": timestamp}
+otp_store = {}
+
+def send_otp_email(email, otp):
+    smtp_server = os.environ.get('SMTP_SERVER')
+    smtp_port = os.environ.get('SMTP_PORT', '587')
+    smtp_user = os.environ.get('SMTP_USER')
+    smtp_password = os.environ.get('SMTP_PASSWORD')
+
+    subject = "Your ProjectNest Registration OTP"
+    body = f"Hello,\n\nYour OTP for registration at ProjectNest is: {otp}\nThis code is valid for 5 minutes.\n\nThank you,\nProjectNest Team"
+
+    # Print log message in development
+    print(f"\n[OTP SYSTEM] Generated OTP {otp} for email {email}", flush=True)
+
+    if not smtp_server or not smtp_user or not smtp_password:
+        print("[OTP SYSTEM] SMTP configuration is missing. Printing OTP to terminal logs instead of sending email.\n", flush=True)
+        return True
+
+    try:
+        msg = MIMEText(body)
+        msg['Subject'] = subject
+        msg['From'] = smtp_user
+        msg['To'] = email
+
+        with smtplib.SMTP(smtp_server, int(smtp_port)) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.send_message(msg)
+        print(f"[OTP SYSTEM] Successfully sent OTP to {email} via SMTP.\n", flush=True)
+        return True
+    except Exception as e:
+        print(f"[OTP SYSTEM] Error sending email to {email}: {str(e)}\n", flush=True)
+        return False
+
+@app.route('/api/auth/send-otp', methods=['POST'])
+def send_otp():
+    data = request.json
+    email = data.get('email')
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    # Generate 6-digit OTP
+    otp = f"{random.randint(100000, 999999)}"
+    expires_at = datetime.now().timestamp() + 300  # 5 minutes validity
+
+    # Send the email
+    success = send_otp_email(email, otp)
+    if success:
+        otp_store[email] = {"otp": otp, "expires_at": expires_at}
+        return jsonify({"success": "OTP sent successfully"})
+    else:
+        # If sending fails but no SMTP configuration was provided, still succeed (development mode fallback)
+        if not os.environ.get('SMTP_SERVER'):
+            otp_store[email] = {"otp": otp, "expires_at": expires_at}
+            return jsonify({"success": "OTP generated (development mode)", "dev_mode": True})
+        return jsonify({"error": "Failed to send OTP email"}), 500
+
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     data = request.json
+    email = data.get('email')
+    user_otp = data.get('otp')
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+    if not user_otp:
+        return jsonify({"error": "OTP is required"}), 400
+
+    # Verify OTP
+    stored = otp_store.get(email)
+    if not stored:
+        return jsonify({"error": "No OTP sent to this email address"}), 400
+
+    # Check expiration
+    if datetime.now().timestamp() > stored['expires_at']:
+        otp_store.pop(email, None)
+        return jsonify({"error": "OTP has expired. Please request a new one."}), 400
+
+    if stored['otp'] != str(user_otp):
+        return jsonify({"error": "Invalid OTP code"}), 400
+
+    # Valid OTP - remove from store
+    otp_store.pop(email, None)
+
     conn = get_db_connection()
     
     # Check if exists
-    exists = conn.execute('SELECT email FROM users WHERE email = ?', (data.get('email'),)).fetchone()
+    exists = conn.execute('SELECT email FROM users WHERE email = ?', (email,)).fetchone()
     if exists:
         conn.close()
         return jsonify({"error": "Email is already registered"}), 400
@@ -292,7 +393,7 @@ def register():
         INSERT INTO users (email, name, mobile, college, uni, branch, semester, password, role, blocked)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'student', 0)
         ''', (
-            data.get('email'),
+            email,
             data.get('name'),
             data.get('mobile'),
             data.get('college'),
