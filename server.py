@@ -528,6 +528,122 @@ def adjust_stock():
         conn.close()
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/mentors', methods=['GET'])
+def get_mentors():
+    conn = get_db_connection()
+    mentors = conn.execute('SELECT * FROM mentors').fetchall()
+    conn.close()
+
+    result = []
+    for m in mentors:
+        result.append({
+            "id": m['id'],
+            "name": m['name'],
+            "specialties": m['specialties'],
+            "company": m['company'],
+            "rating": m['rating'],
+            "bookingsFee": m['bookingsFee'],
+            "picPath": m['picPath']
+        })
+    return jsonify(result)
+
+@app.route('/api/forum', methods=['GET'])
+def get_forum():
+    conn = get_db_connection()
+    threads = conn.execute('SELECT * FROM forum_threads').fetchall()
+    replies = conn.execute('SELECT * FROM forum_replies').fetchall()
+    conn.close()
+
+    result = []
+    for t in threads:
+        t_replies = []
+        for r in replies:
+            if r['threadId'] == t['id']:
+                t_replies.append({
+                    "id": r['id'],
+                    "author": r['author'],
+                    "content": r['content']
+                })
+        result.append({
+            "id": t['id'],
+            "title": t['title'],
+            "category": t['category'],
+            "author": t['author'],
+            "content": t['content'],
+            "likes": t['likes'],
+            "date": t['date'],
+            "replies": t_replies
+        })
+    return jsonify(result)
+
+@app.route('/api/dashboard/projects', methods=['GET'])
+def get_dashboard_projects():
+    email = request.args.get('email')
+    if not email:
+        return jsonify([])
+    conn = get_db_connection()
+    purchased = conn.execute('SELECT * FROM purchased_projects WHERE email = ?', (email,)).fetchall()
+    conn.close()
+    
+    result = []
+    for p in purchased:
+        result.append({
+            "id": p['id'],
+            "email": p['email'],
+            "projectId": p['projectId'],
+            "progressStep": p['progressStep'],
+            "files": p['files']
+        })
+    return jsonify(result)
+
+@app.route('/api/appointments', methods=['GET'])
+def get_appointments():
+    email = request.args.get('email')
+    if not email:
+        return jsonify([])
+    conn = get_db_connection()
+    appointments = conn.execute('SELECT * FROM appointments WHERE studentEmail = ?', (email,)).fetchall()
+    conn.close()
+    
+    result = []
+    for a in appointments:
+        result.append({
+            "id": a['id'],
+            "mentorName": a['mentorName'],
+            "date": a['date'],
+            "time": a['time'],
+            "type": a['type'],
+            "studentEmail": a['studentEmail'],
+            "status": a['status']
+        })
+    return jsonify(result)
+
+@app.route('/api/orders', methods=['GET'])
+def get_orders():
+    email = request.args.get('email')
+    if not email:
+        return jsonify([])
+    conn = get_db_connection()
+    orders = conn.execute('SELECT * FROM orders WHERE email = ?', (email,)).fetchall()
+    conn.close()
+    
+    result = []
+    for o in orders:
+        result.append({
+            "id": o['id'],
+            "orderId": o['orderId'],
+            "date": o['date'],
+            "total": o['total'],
+            "discount": o['discount'],
+            "gst": o['gst'],
+            "subtotal": o['subtotal'],
+            "gstNumber": o['gstNumber'],
+            "paymentMethod": o['paymentMethod'],
+            "email": o['email'],
+            "status": o['status']
+        })
+    return jsonify(result)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
