@@ -1,14 +1,4 @@
-None selected 
 
-Skip to content
-Using Gmail with screen readers
-in:sent 
-1 of 25
-(no subject)
-
-Ankush Anand <ankushanand1729@gmail.com>
-1:11 PM (0 minutes ago)
-to Ankush
 
 import os
 import sqlite3
