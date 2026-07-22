@@ -1,5 +1,3 @@
-
-
 import os
 import sqlite3
 import uuid
@@ -9,13 +7,11 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS  # 1. Import it
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # 2. Enable it for your app
+CORS(app)
 
-
-# --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'projectnest.db')
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
@@ -24,7 +20,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# --- CUSTOM CORS MIDDLEWARE ---
 @app.after_request
 def add_cors_headers(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -36,18 +31,21 @@ def add_cors_headers(response):
 def ping():
     return jsonify({"status": "healthy"})
 
-# --- DATABASE CONNECTION UTILITIES ---
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-# --- INIT DATABASE AND SEED DATA ---
+def parse_json_request():
+    data = request.get_json(silent=True)
+    if data is None:
+        return None, (jsonify({"error": "Request must be application/json"}), 400)
+    return data, None
+
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Create Tables
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         email TEXT PRIMARY KEY,
@@ -73,9 +71,9 @@ def init_db():
         difficulty TEXT,
         price INTEGER,
         completionTime TEXT,
-        components TEXT, -- JSON string
-        software TEXT,   -- JSON string
-        hardware TEXT,   -- JSON string
+        components TEXT,
+        software TEXT,
+        hardware TEXT,
         mentorId TEXT,
         rating REAL,
         reviewsCount INTEGER
@@ -160,13 +158,12 @@ def init_db():
         email TEXT,
         projectId TEXT,
         progressStep INTEGER,
-        files TEXT -- JSON string
+        files TEXT
     )
     ''')
 
     conn.commit()
 
-    # Seed Default Data if empty
     cursor.execute('SELECT COUNT(*) FROM users')
     if cursor.fetchone()[0] == 0:
         cursor.executemany('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
@@ -184,7 +181,6 @@ def init_db():
              json.dumps(['Arduino IDE', 'Blynk IoT App', 'C++ Language']),
              json.dumps(['ESP32 NodeMCU', 'Relay circuitry', 'Water pipe attachments']),
              'm1', 4.8, 14),
-            
             ('p2', 'Real-Time Driver Drowsiness Detection System with OpenCV', 'CSE', 'AI & Machine Learning',
              'A safety system for automobiles designed to detect driver drowsiness and trigger a buzzer. Built with Python using Dlib facial landmark detection and OpenCV image processing to measure eye aspect ratio (EAR) and mouth yawn frequency in real-time webcams.',
              'Hard', 3200, '45 hours',
@@ -192,7 +188,6 @@ def init_db():
              json.dumps(['Python 3', 'OpenCV Library', 'Dlib Facial Landmarks Model', 'VS Code']),
              json.dumps(['Processor board or Desktop system', 'Visual camera']),
              'm2', 4.9, 22),
-
             ('p3', 'Autonomous Path Finding Robot using LiDAR & SLAM', 'Mech', 'Robotics',
              'An advanced robotic vehicle configured to map indoor rooms and safely navigate around obstacles using LiDAR sensors, ROS (Robot Operating System), and Gmapping SLAM navigation modules.',
              'Hard', 4999, '60 hours',
@@ -200,7 +195,6 @@ def init_db():
              json.dumps(['ROS Noetic', 'Linux Ubuntu 20.04', 'Python / C++']),
              json.dumps(['Custom acrylic chassis', 'DC geared motors', '12V battery source']),
              'm1', 4.7, 8),
-
             ('p4', 'Smart Home Automation Controller using Raspberry Pi', 'EE', 'Embedded Systems',
              'A comprehensive home automation setup controlled via a secure web dashboard hosted on a local Raspberry Pi. Integrates appliance relays, temperature monitoring, and voice alerts.',
              'Medium', 2199, '25 hours',
@@ -208,7 +202,6 @@ def init_db():
              json.dumps(['Node-RED', 'Python', 'HTML/CSS/JS Dash']),
              json.dumps(['AC socket array', 'Pi case']),
              'm3', 4.6, 16),
-
             ('p5', 'Seismic Load Performance Analysis of Multi-Story Structure', 'Civil', 'Civil Engineering',
              'A simulation-based structural analysis determining structural behavior and stress limits of a 15-story skyscraper framework subjected to seismic lateral forces in different earthquake zones.',
              'Medium', 1800, '20 hours',
@@ -253,29 +246,30 @@ def init_db():
 
 init_db()
 
-# --- SERVE MENTOR IMAGES ---
 @app.route('/uploads/<path:filename>')
 def serve_uploads(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# --- SERVE FRONTEND STATIC FILES ---
 @app.route('/')
 def serve_index():
     return send_from_directory(BASE_DIR, 'index.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    # Security filter: block access to system/sensitive files
     if filename.endswith('.py') or filename.endswith('.db') or filename.endswith('.txt') or filename.startswith('.'):
         return jsonify({"error": "Forbidden"}), 403
     return send_from_directory(BASE_DIR, filename)
 
-# --- AUTH ENDPOINTS ---
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    data = request.json
+    data, error = parse_json_request()
+    if error:
+        return error
+
     email = data.get('email')
     password = data.get('password')
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
 
     conn = get_db_connection()
     user = conn.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password)).fetchone()
@@ -296,8 +290,6 @@ def login():
         })
     return jsonify({"error": "Invalid credentials"}), 401
 
-# --- IN-MEMORY OTP STORE ---
-# Key: email, Value: {"otp": otp, "expires_at": timestamp}
 otp_store = {}
 
 def send_otp_email(email, otp):
@@ -309,7 +301,6 @@ def send_otp_email(email, otp):
     subject = "Your ProjectNest Registration OTP"
     body = f"Hello,\n\nYour OTP for registration at ProjectNest is: {otp}\nThis code is valid for 5 minutes.\n\nThank you,\nProjectNest Team"
 
-    # Print log message in development
     print(f"\n[OTP SYSTEM] Generated OTP {otp} for email {email}", flush=True)
 
     if not smtp_server or not smtp_user or not smtp_password:
@@ -334,38 +325,36 @@ def send_otp_email(email, otp):
 
 @app.route('/api/auth/send-otp', methods=['POST'])
 def send_otp():
-    data = request.json
+    data, error = parse_json_request()
+    if error:
+        return error
+
     email = data.get('email')
     if not email:
         return jsonify({"error": "Email is required"}), 400
 
-    # Generate 6-digit OTP
     otp = f"{random.randint(100000, 999999)}"
-    expires_at = datetime.now().timestamp() + 300  # 5 minutes validity
+    expires_at = datetime.now().timestamp() + 300
 
-    # Send the email
     success = send_otp_email(email, otp)
     if success:
         otp_store[email] = {"otp": otp, "expires_at": expires_at}
-        return jsonify({"success": "OTP sent successfully"})
-    else:
-        # If sending fails but no SMTP configuration was provided, still succeed (development mode fallback)
         if not os.environ.get('SMTP_SERVER'):
-            otp_store[email] = {"otp": otp, "expires_at": expires_at}
             return jsonify({"success": "OTP generated (development mode)", "dev_mode": True, "otp": otp})
-        return jsonify({"error": "Failed to send OTP email"}), 500
+        return jsonify({"success": "OTP sent successfully"})
+    return jsonify({"error": "Failed to send OTP email"}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
-    data = request.json
-    email = data.get('email')
+    data, error = parse_json_request()
+    if error:
+        return error
 
+    email = data.get('email')
     if not email:
         return jsonify({"error": "Email is required"}), 400
 
     conn = get_db_connection()
-   
-    # Check if exists
     exists = conn.execute('SELECT email FROM users WHERE email = ?', (email,)).fetchone()
     if exists:
         conn.close()
@@ -392,7 +381,6 @@ def register():
         conn.close()
         return jsonify({"error": str(e)}), 500
 
-# --- PROJECTS ENDPOINTS ---
 @app.route('/api/projects', methods=['GET'])
 def get_projects():
     conn = get_db_connection()
@@ -417,17 +405,20 @@ def get_projects():
             "rating": p['rating'],
             "reviewsCount": p['reviewsCount'],
             "faqs": [
-              { "q": "Is hardware assembly guide included?", "a": "Yes, step-by-step schematics and video tutorials are provided." },
-              { "q": "Can I replace ESP32 with Arduino Uno?", "a": "Yes, but you will need an external ESP8266 Wi-Fi shield for internet features." }
+                {"q": "Is hardware assembly guide included?", "a": "Yes, step-by-step schematics and video tutorials are provided."},
+                {"q": "Can I replace ESP32 with Arduino Uno?", "a": "Yes, but you will need an external ESP8266 Wi-Fi shield for internet features."}
             ]
         })
     return jsonify(result)
 
 @app.route('/api/admin/projects/add', methods=['POST'])
 def add_project():
-    data = request.json
+    data, error = parse_json_request()
+    if error:
+        return error
+
     proj_id = 'p' + str(uuid.uuid4().hex[:6])
-   
+
     conn = get_db_connection()
     try:
         conn.execute('''
@@ -462,13 +453,12 @@ def delete_project(id):
     conn.close()
     return jsonify({"success": "Project deleted successfully"})
 
-# --- COMPONENTS ENDPOINTS ---
 @app.route('/api/components', methods=['GET'])
 def get_components():
     conn = get_db_connection()
     components = conn.execute('SELECT * FROM components').fetchall()
     conn.close()
-   
+
     result = []
     for c in components:
         result.append({
@@ -483,9 +473,12 @@ def get_components():
 
 @app.route('/api/admin/components/add', methods=['POST'])
 def add_component():
-    data = request.json
+    data, error = parse_json_request()
+    if error:
+        return error
+
     comp_id = 'c' + str(uuid.uuid4().hex[:6])
-   
+
     conn = get_db_connection()
     try:
         conn.execute('''
@@ -516,10 +509,15 @@ def delete_component(id):
 
 @app.route('/api/admin/components/adjust-stock', methods=['POST'])
 def adjust_stock():
-    data = request.json
+    data, error = parse_json_request()
+    if error:
+        return error
+
     comp_id = data.get('id')
     amount = data.get('amount', 0)
-   
+    if not comp_id:
+        return jsonify({"error": "Component id is required"}), 400
+
     conn = get_db_connection()
     try:
         conn.execute('UPDATE components SET stock = stock + ? WHERE id = ?', (amount, comp_id))
@@ -530,21 +528,6 @@ def adjust_stock():
         conn.close()
         return jsonify({"error": str(e)}), 500
 
-# --- RENDER/PRODUCTION SERVER RUNNER ---
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
- 
-
-
-
-
-
-
-
-
-
-
-
-             
