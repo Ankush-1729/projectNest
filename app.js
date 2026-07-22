@@ -4,7 +4,7 @@
  */
 
 const app = {
-    API_URL: window.location.origin === 'null' || window.location.protocol === 'file:' ? "http://127.0.0.1:5000/api" : "/api",
+    API_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' ? "http://127.0.0.1:5000/api" : "https://projectnest-1.onrender.com/api",
 
     // Global State Database Cache
   
